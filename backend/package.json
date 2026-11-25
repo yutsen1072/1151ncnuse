@@ -1,0 +1,19 @@
+{
+  "name": "ncnu-space-query-backend",
+  "version": "1.0.0",
+  "description": "國立暨南國際大學 管理學院空間查詢模組 後端 RESTful API 服務",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "multer": "^1.4.5-lts.1"
+  }
+}

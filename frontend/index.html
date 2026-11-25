@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>國立暨南國際大學 管理學院空間查詢系統 | 360° 全景導覽</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome 6 圖示庫 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Pannellum 360 全景 WebGL 函式庫 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+
+  <!-- 自訂樣式 -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-blue-600 selection:text-white">
+
+  <!-- 1. 頂部導航列 (Top Navigation Header) -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40 px-4 lg:px-8 py-3">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white font-bold text-lg">
+          <i class="fas fa-university"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+            國立暨南國際大學 <span class="text-blue-400 font-semibold text-sm">管理學院空間查詢模組</span>
+          </h1>
+          <p class="text-xs text-slate-400 hidden sm:block">
+            College of Management Space Query & 360° Panorama Interactive Map
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- 樓層切換按鈕區 -->
+        <div id="floor-tabs" class="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+          <!-- 由 JS 動態產生 1F, 2F, 3F 等標籤 -->
+        </div>
+
+        <!-- 管理員驗證按鈕 -->
+        <button id="btn-admin-auth" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 transition flex items-center gap-1.5 shadow-sm">
+          <i class="fas fa-lock"></i>
+          <span class="hidden sm:inline">管理員登入</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 管理員工具列 (登入後顯示) -->
+  <div id="admin-actions-bar" class="hidden bg-emerald-950/40 border-b border-emerald-500/30 px-4 lg:px-8 py-2">
+    <div class="max-w-7xl mx-auto flex items-center justify-between text-xs text-emerald-300">
+      <div class="flex items-center gap-2">
+        <i class="fas fa-check-shield text-emerald-400"></i>
+        <span>管理員維護模式已啟用：您具備增、刪、修改教室資料與調整平面圖座標之完整權限。</span>
+      </div>
+      <button id="btn-add-classroom" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold shadow transition flex items-center gap-1">
+        <i class="fas fa-plus"></i> 新增教室空間
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. 主工作版面 (Main Dashboard Grid) -->
+  <main class="max-w-7xl mx-auto w-full p-4 lg:p-6 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- 左欄：空間查詢與教室清單 (4 Columns) -->
+    <section class="lg:col-span-4 flex flex-col gap-4">
+      
+      <!-- 搜尋與篩選器卡片 -->
+      <div class="glass-panel p-4 rounded-2xl border border-slate-800 shadow-xl flex flex-col gap-3">
+        <div class="relative">
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+          <input 
+            type="text" 
+            id="search-input" 
+            placeholder="搜尋教室代號 (如 管112、管213) 或關鍵字..." 
+            class="w-full bg-slate-900/90 text-sm pl-9 pr-4 py-2 rounded-xl border border-slate-700 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+          >
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <label class="block text-slate-400 mb-1 font-medium">空間類型</label>
+            <select id="filter-room-type" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-300 focus:outline-none focus:border-blue-500">
+              <option value="">全部類型</option>
+              <option value="一般教室">一般教室</option>
+              <option value="個案教室">個案教室</option>
+              <option value="階梯教室">階梯教室</option>
+              <option value="會議廳">會議廳</option>
+              <option value="研討室">研討室</option>
+              <option value="會議室">會議室</option>
+            </select>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-slate-400 mb-1 font-medium">
+              <span>容納人數</span>
+              <span id="filter-capacity-val" class="text-blue-400 font-bold">不限</span>
+            </div>
+            <input 
+              type="range" 
+              id="filter-capacity-slider" 
+              min="0" 
+              max="200" 
+              step="20" 
+              value="0" 
+              class="w-full accent-blue-500 cursor-pointer mt-1"
+            >
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs text-slate-400">
+          <span>篩選結果</span>
+          <span id="classroom-count-badge" class="px-2 py-0.5 rounded-full bg-blue-900/40 text-blue-300 font-bold border border-blue-700/50">
+            0 間教室
+          </span>
+        </div>
+      </div>
+
+      <!-- 教室卡片捲動清單 -->
+      <div id="classroom-list-container" class="flex flex-col gap-3 overflow-y-auto max-h-[640px] pr-1">
+        <!-- 由 JS 動態注入教室卡片 -->
+      </div>
+    </section>
+
+    <!-- 右側：平面圖與 360° 全景沉浸體驗區 (8 Columns) -->
+    <section class="lg:col-span-8 flex flex-col gap-6">
+
+      <!-- 上半部：360° 全景照片互動檢視器 (Pannellum) -->
+      <div class="glass-panel p-4 rounded-2xl border border-slate-800 shadow-xl flex flex-col">
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <span class="flex h-3 w-3 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </span>
+            <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
+              <i class="fas fa-vr-cardboard text-blue-400"></i> 360° 空間全景實景瀏覽 (Pannellum WebGL)
+            </h3>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="btn-autorotate" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition border border-slate-700">
+              <i class="fas fa-pause mr-1"></i>暫停旋轉
+            </button>
+            <button id="btn-reset-view" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition border border-slate-700" title="重設視角">
+              <i class="fas fa-compass"></i>
+            </button>
+            <button id="btn-fullscreen" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition border border-slate-700" title="全螢幕">
+              <i class="fas fa-expand"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Pannellum WebGL Canvas 容器 -->
+        <div class="relative w-full h-[380px] bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
+          <div id="panorama-viewer-container"></div>
+        </div>
+      </div>
+
+      <!-- 中半部：教室空間詳細資訊卡 -->
+      <div id="classroom-detail-pane">
+        <!-- 由 JS 渲染當前選取之教室資訊 -->
+      </div>
+
+      <!-- 下半部：管院平面圖互動區 (Floor Map with Classroom Location Pins) -->
+      <div class="glass-panel p-4 rounded-2xl border border-slate-800 shadow-xl flex flex-col">
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-map-marked-alt text-sky-400"></i>
+            <h3 class="text-sm font-bold text-white">管院樓層平面圖 · 教室空間定位</h3>
+          </div>
+          <span class="text-xs text-slate-400">
+            <i class="fas fa-mouse-pointer text-slate-500 mr-1"></i>點擊圖上 Pin 標記可即時切換教室與 360° 全景
+          </span>
+        </div>
+
+        <div class="relative w-full bg-slate-900/60 rounded-xl p-2 border border-slate-800 overflow-hidden">
+          <div id="floor-map-container" class="w-full">
+            <!-- 由 JS 動態注入 SVG 平面圖與教室標記 -->
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- 3. 管理員登入 Modal (Dialog) -->
+  <div id="admin-login-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-2xl p-6 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="font-bold text-white flex items-center gap-2">
+          <i class="fas fa-user-shield text-blue-400"></i> 管理員身份驗證
+        </h3>
+        <button id="btn-close-login" class="text-slate-400 hover:text-white">&times;</button>
+      </div>
+
+      <form id="admin-login-form" class="mt-4 flex flex-col gap-3">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">管理員帳號</label>
+          <input type="text" id="login-username" value="admin" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">密碼</label>
+          <input type="password" id="login-password" value="admin123" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-blue-500">
+          <p class="text-[11px] text-slate-500 mt-1">示範預設：帳號 admin / 密碼 admin123</p>
+        </div>
+        <button type="submit" class="mt-2 w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-lg shadow-blue-600/30 transition text-sm">
+          確認登入
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. 教室資料編輯與新增 Modal (Classroom Edit Drawer) -->
+  <div id="classroom-edit-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 id="modal-edit-title" class="font-bold text-white text-lg flex items-center gap-2">
+          <i class="fas fa-edit text-amber-400"></i> 編輯教室資料
+        </h3>
+        <button id="btn-close-edit" class="text-slate-400 hover:text-white text-xl">&times;</button>
+      </div>
+
+      <form id="classroom-form" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">教室代號 (如: 管112, 管213)*</label>
+          <input type="text" id="form-room-code" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">教室全名 (空間名稱)*</label>
+          <input type="text" id="form-name" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">所屬樓層*</label>
+          <select id="form-floor" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+            <option value="1F">1F (一樓)</option>
+            <option value="2F">2F (二樓)</option>
+            <option value="3F">3F (三樓)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">空間類型*</label>
+          <select id="form-type" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+            <option value="一般教室">一般教室</option>
+            <option value="個案教室">個案教室</option>
+            <option value="階梯教室">階梯教室</option>
+            <option value="會議廳">會議廳</option>
+            <option value="研討室">研討室</option>
+            <option value="會議室">會議室</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">容納人數 (人)*</label>
+          <input type="number" id="form-capacity" min="1" max="500" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">平面圖標註座標 (X%, Y%)</label>
+          <div class="flex items-center gap-2">
+            <input type="number" step="0.1" id="form-coord-x" placeholder="X%" class="w-1/2 bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+            <input type="number" step="0.1" id="form-coord-y" placeholder="Y%" class="w-1/2 bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+            <button type="button" id="btn-pick-coord" class="px-2.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs whitespace-nowrap shadow" title="在地圖上點選位置">
+              <i class="fas fa-crosshairs"></i> 點選拾取
+            </button>
+          </div>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-xs text-slate-400 mb-1">360° 全景相片網址 (Equirectangular 影像)*</label>
+          <input type="url" id="form-panorama" required class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white" placeholder="https://pannellum.org/images/alma.jpg">
+          <p class="text-[11px] text-slate-500 mt-1">支援任意等距柱狀投影 360 圖檔，可填入 Pannellum 範例或校內伺服器路徑。</p>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-xs text-slate-400 mb-1">配備設施 (請以半形逗號分隔)</label>
+          <input type="text" id="form-facilities" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white" placeholder="高高畫質投影機, 電動投影布幕, 無線高速網路 (Wi-Fi 6), 智慧講桌">
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-xs text-slate-400 mb-1">空間介紹與格局特色</label>
+          <textarea id="form-description" rows="2" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white"></textarea>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-xs text-slate-400 mb-1">借用規範與鑰匙領取方式</label>
+          <input type="text" id="form-borrow" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white" placeholder="課程教學優先。借用請洽管院辦公室。">
+        </div>
+
+        <div class="md:col-span-2 flex justify-end gap-3 pt-3 border-t border-slate-800">
+          <button type="button" onclick="document.getElementById('classroom-edit-modal').classList.add('hidden')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm">
+            取消
+          </button>
+          <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-sm shadow-lg shadow-blue-600/30 transition">
+            儲存資料
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 頁尾說明 -->
+  <footer class="mt-auto py-4 border-t border-slate-800 text-center text-xs text-slate-500">
+    國立暨南國際大學 管理學院 · 軟體工程專題實作 · 空間查詢與 360° 全景導覽模組
+  </footer>
+
+  <!-- 前端核心主腳本 -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 650" width="100%" height="100%">
+  <defs>
+    <style>
+      .building-wall { fill: #f8fafc; stroke: #334155; stroke-width: 4; stroke-linejoin: round; }
+      .room-wall { fill: #ffffff; stroke: #64748b; stroke-width: 2; }
+      .corridor { fill: #f1f5f9; stroke: #94a3b8; stroke-width: 1.5; stroke-dasharray: 4,4; }
+      .text-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-weight: bold; fill: #0f172a; font-size: 20px; }
+      .text-room { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13px; fill: #475569; text-anchor: middle; font-weight: 600; }
+      .facility-area { fill: #e2e8f0; stroke: #cbd5e1; }
+      .stair-area { fill: #fee2e2; stroke: #fca5a5; }
+      .entrance { fill: #dcfce7; stroke: #86efac; }
+    </style>
+  </defs>
+
+  <!-- 外輪廓大樓主體 (暨大管理學院雙翼結構) -->
+  <path class="building-wall" d="M 60 120 L 940 120 L 940 540 L 750 540 L 750 450 L 250 450 L 250 540 L 60 540 Z" />
+
+  <!-- 中央陽光中庭與採光天階 -->
+  <rect x="360" y="240" width="280" height="150" fill="#e0f2fe" stroke="#38bdf8" stroke-width="2" rx="8" />
+  <text x="500" y="320" class="text-room" fill="#0284c7" font-size="16">🌿 管院中央陽光中庭</text>
+
+  <!-- 主走廊 Corridor -->
+  <rect x="180" y="200" width="640" height="40" class="corridor" />
+  <rect x="180" y="390" width="640" height="40" class="corridor" />
+  <rect x="180" y="200" width="40" height="230" class="corridor" />
+  <rect x="780" y="200" width="40" height="230" class="corridor" />
+
+  <!-- 1F 西翼教室空間 -->
+  <!-- 管112 -->
+  <rect x="220" y="140" width="130" height="95" class="room-wall" id="room-rect-112" />
+  <text x="285" y="185" class="text-room">管 112</text>
+  <text x="285" y="205" font-size="11" fill="#94a3b8" text-anchor="middle">一般教室 (50人)</text>
+
+  <!-- 管113 -->
+  <rect x="355" y="140" width="130" height="95" class="room-wall" id="room-rect-113" />
+  <text x="420" y="185" class="text-room">管 113</text>
+  <text x="420" y="205" font-size="11" fill="#94a3b8" text-anchor="middle">一般教室 (50人)</text>
+
+  <!-- 管115 -->
+  <rect x="620" y="140" width="130" height="95" class="room-wall" id="room-rect-115" />
+  <text x="685" y="185" class="text-room">管 115</text>
+  <text x="685" y="205" font-size="11" fill="#94a3b8" text-anchor="middle">一般教室 (50人)</text>
+
+  <!-- 育成中心與行政辦公室區域 -->
+  <rect x="755" y="140" width="165" height="150" class="facility-area" />
+  <text x="837" y="215" class="text-room">創業育成中心</text>
+  <text x="837" y="235" font-size="11" fill="#64748b" text-anchor="middle">培育室 / 討論室</text>
+
+  <rect x="80" y="140" width="135" height="150" class="facility-area" />
+  <text x="147" y="215" class="text-room">EMBA / 碩士專班</text>
+  <text x="147" y="235" font-size="11" fill="#64748b" text-anchor="middle">執行辦公室</text>
+
+  <!-- 1F 門廳與主要出入口 (南側與東側) -->
+  <rect x="420" y="450" width="160" height="70" class="entrance" />
+  <text x="500" y="490" class="text-room" fill="#15803d">🚪 管院 1F 南側主門廳入口</text>
+
+  <!-- 樓梯與無障礙電梯 -->
+  <rect x="80" y="360" width="80" height="60" class="stair-area" />
+  <text x="120" y="395" class="text-room" fill="#b91c1c" font-size="11">🛗 電梯/西梯</text>
+
+  <rect x="840" y="360" width="80" height="60" class="stair-area" />
+  <text x="880" y="395" class="text-room" fill="#b91c1c" font-size="11">🛗 電梯/東梯</text>
+
+  <!-- 樓層標題 -->
+  <text x="50" y="70" class="text-title">國立暨南國際大學 管理學院 1F 平面配置圖</text>
+</svg>
