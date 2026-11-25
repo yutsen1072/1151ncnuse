@@ -1,10 +1,13 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import auth
+from sqlmodel import Session, select
 
-app = FastAPI(title="管院空間與排課系統 API")
+from database import get_session
+from models import Classroom, User
+from routers import schedule
 
-# 允許前端網頁連線存取
+app = FastAPI(title="管院空間與排課整合系統 API")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -13,8 +16,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router)
+# 掛載你的志願排課模組
+app.include_router(schedule.router)
 
-@app.get("/")
-def root():
-    return {"status": "ok", "message": "後端 API 運作正常"}
+
+# 提供下拉選單所需的老師與教室基本清單
+@app.get("/api/options")
+def get_form_options(session: Session = Depends(get_session)):
+    teachers = session.exec(select(User).where(User.role == "teacher")).all()
+    classrooms = session.exec(select(Classroom)).all()
+    return {
+        "teachers": [{"id": t.id, "name": t.name} for t in teachers],
+        "classrooms": [{"id": c.id, "room_code": c.room_code, "name": c.name} for c in classrooms],
+    }

@@ -1,0 +1,63 @@
+-- ==========================================
+-- 1. 共用帳號表 (所有模組共用登入與角色權限)
+-- ==========================================
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,      -- 學號 / 教職員編號
+    password_hash VARCHAR(255) NOT NULL,       -- 密碼雜湊值 (PBKDF2 / bcrypt)
+    name VARCHAR(50) NOT NULL,                 -- 姓名
+    email VARCHAR(100) UNIQUE NOT NULL,        -- 電子信箱
+    role VARCHAR(20) NOT NULL DEFAULT 'student', -- 'student'(學生), 'teacher'(老師), 'admin'(管理員)
+    status VARCHAR(20) NOT NULL DEFAULT 'pending', -- 'pending'(待審核), 'active'(已啟用), 'rejected'(退回)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==========================================
+-- 2. 共用教室空間表 (排課選擇教室、空間查詢與借用共用)
+-- ==========================================
+CREATE TABLE IF NOT EXISTS classrooms (
+    id SERIAL PRIMARY KEY,
+    room_code VARCHAR(20) UNIQUE NOT NULL,     -- 空間編號 (如: 管201, 管202)
+    name VARCHAR(100) NOT NULL,                -- 教室名稱 (如: 個案研討室)
+    floor INTEGER NOT NULL,                    -- 樓層
+    capacity INTEGER NOT NULL,                 -- 容納人數
+    equipment_desc TEXT,                       -- 固定設備說明
+    panorama_url TEXT,                         -- 360 全景圖路徑 (供組員 A 使用)
+    map_x FLOAT,                               -- 平面圖 X 座標百分比
+    map_y FLOAT,                               -- 平面圖 Y 座標百分比
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==========================================
+-- 3. 共用空間借用單表 (完整款整合：排課時檢查教室是否已被借走)
+-- ==========================================
+CREATE TABLE IF NOT EXISTS bookings (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    classroom_id INTEGER REFERENCES classrooms(id) ON DELETE CASCADE,
+    booking_date DATE NOT NULL,                -- 借用日期
+    start_time TIME NOT NULL,                  -- 借用開始時間
+    end_time TIME NOT NULL,                    -- 借用結束時間
+    purpose TEXT,                              -- 借用事由
+    status VARCHAR(20) DEFAULT 'pending',      -- 'pending', 'approved', 'rejected', 'checked_out', 'returned'
+    admin_comment TEXT,                        -- 管理員審核意見
+    checked_out_at TIMESTAMP,                  -- 領用時間
+    returned_at TIMESTAMP,                     -- 歸還時間
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==========================================
+-- 4. 志願排課模組主表 (你的核心資料表)
+-- ==========================================
+CREATE TABLE IF NOT EXISTS courses (
+    id SERIAL PRIMARY KEY,
+    course_code VARCHAR(20) NOT NULL,          -- 課程代碼 (如: IM301)
+    course_name VARCHAR(100) NOT NULL,         -- 課程名稱 (如: 軟體工程)
+    teacher_id INTEGER REFERENCES users(id) ON DELETE CASCADE,      -- 授課老師 ID
+    classroom_id INTEGER REFERENCES classrooms(id) ON DELETE SET NULL, -- 希望/指派的教室 ID (可為 NULL)
+    course_date DATE NOT NULL,                 -- 排課日期 (配合週日曆檢視與拖曳)
+    start_time TIME NOT NULL,                  -- 開始時間 (如: 09:00:00)
+    end_time TIME NOT NULL,                    -- 結束時間 (如: 12:00:00)
+    status VARCHAR(20) DEFAULT 'pending',      -- 'pending'(教師志願登記) / 'confirmed'(管理員已排定)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

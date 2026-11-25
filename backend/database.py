@@ -1,17 +1,16 @@
 import os
-from pathlib import Path
 from dotenv import load_dotenv
-from sqlmodel import create_engine, Session
+from sqlmodel import Session, create_engine
 
-# 明確指向專案根目錄 (1151ncnuse/.env)
-env_path = Path(__file__).resolve().parent.parent / ".env"
-load_dotenv(dotenv_path=env_path)
+load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
-    raise ValueError(f"找不到 DATABASE_URL，請確認 {env_path} 檔案設定")
+    raise ValueError("找不到 DATABASE_URL，請確認 .env 檔案已正確設定")
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+# 若使用 Supabase Pooler 或需要 SSL，可保留預設設定
+engine = create_engine(DATABASE_URL, echo=False)
+
 
 def get_session():
     with Session(engine) as session:
