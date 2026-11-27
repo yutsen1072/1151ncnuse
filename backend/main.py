@@ -4,7 +4,7 @@ from sqlmodel import Session, select
 
 from database import get_session
 from models import Classroom, User
-from routers import schedule
+from routers import auth, schedule  # 補上 auth
 
 app = FastAPI(title="管院空間與排課整合系統 API")
 
@@ -16,7 +16,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 掛載你的志願排課模組
+# 掛載帳號驗證與志願排課模組
+app.include_router(auth.router)      # 補上這行
 app.include_router(schedule.router)
 
 

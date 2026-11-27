@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>管院空間與排課系統 — 志願排課模組</title>
+  <!-- 引入 FullCalendar 週日曆套件 -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+  <style>
+    :root {
+      --bg: #f4f3ef;
+      --card: #ffffff;
+      --primary: #5c768d;
+      --primary-hover: #485e72;
+      --sage: #7a9486;
+      --amber: #d4a373;
+      --danger: #b55d5d;
+      --text: #333a40;
+      --border: #dcdfe2;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); }
+
+    /* 頂部導覽列 */
+    header {
+      background: var(--card); border-bottom: 1px solid var(--border);
+      padding: 14px 28px; display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
+    header h1 { margin: 0; font-size: 1.25rem; color: var(--primary); }
+    .user-bar { display: flex; align-items: center; gap: 12px; font-size: 0.92rem; }
+    .badge {
+      padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 0.82rem;
+      background: #e9eff4; color: var(--primary);
+    }
+    .btn-outline {
+      padding: 6px 12px; border: 1px solid var(--border); background: #fff;
+      border-radius: 6px; cursor: pointer; font-size: 0.85rem; color: var(--text);
+    }
+    .btn-outline:hover { background: #f2f2ef; }
+
+    /* 主版面網格 */
+    .main-layout {
+      max-width: 1320px; margin: 24px auto; padding: 0 20px;
+      display: grid; grid-template-columns: 360px 1fr; gap: 24px; align-items: start;
+    }
+    @media (max-width: 960px) { .main-layout { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--card); padding: 24px; border-radius: 14px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05); margin-bottom: 20px;
+    }
+    .card h2 {
+      margin: 0 0 16px; font-size: 1.1rem; color: var(--primary);
+      border-bottom: 1px solid var(--border); padding-bottom: 10px;
+    }
+
+    /* 表單樣式 */
+    .form-group { margin-bottom: 12px; }
+    label { display: block; margin-bottom: 5px; font-size: 0.88rem; font-weight: 500; }
+    input, select {
+      width: 100%; padding: 9px 11px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 0.92rem; background: #fff;
+    }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn-submit {
+      width: 100%; padding: 11px; margin-top: 8px; background: var(--sage);
+      color: #fff; border: none; border-radius: 8px; font-size: 0.95rem;
+      font-weight: 600; cursor: pointer;
+    }
+    .btn-submit:hover { opacity: 0.92; }
+
+    /* 衝突警告區塊 */
+    .conflict-box {
+      background: #fdf3f3; border: 1px solid #ecc8c8; border-radius: 10px;
+      padding: 14px 16px; margin-bottom: 18px;
+    }
+    .conflict-box.clean { background: #eef6f1; border-color: #c5dfd0; color: #2d5a43; }
+    .conflict-title { font-weight: 700; color: var(--danger); margin-bottom: 8px; font-size: 0.95rem; }
+    .conflict-box.clean .conflict-title { color: #2d5a43; margin-bottom: 0; }
+    .conflict-list { margin: 0; padding-left: 18px; font-size: 0.88rem; color: #6e2b2b; }
+    .conflict-list li { margin-bottom: 4px; }
+
+    /* 課程清單表格 */
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-top: 10px; }
+    th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--primary); font-weight: 600; background: #faf9f6; }
+    .status-tag {
+      padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; color: #fff;
+    }
+    .status-confirmed { background: #4f772d; }
+    .status-pending { background: var(--amber); }
+    .btn-del {
+      padding: 4px 8px; background: #fbeaea; color: var(--danger);
+      border: 1px solid #ecc8c8; border-radius: 5px; cursor: pointer; font-size: 0.8rem;
+    }
+    .btn-del:hover { background: var(--danger); color: #fff; }
+    .btn-confirm {
+      padding: 4px 8px; background: #e6f2ec; color: #2d5a43;
+      border: 1px solid #c5dfd0; border-radius: 5px; cursor: pointer; font-size: 0.8rem;
+      margin-right: 4px;
+    }
+    .btn-confirm:hover { background: #4f772d; color: #fff; }
+
+    /* Toast 提示 */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; padding: 12px 18px;
+      border-radius: 8px; color: #fff; font-size: 0.9rem; font-weight: 500;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15); display: none; z-index: 999;
+    }
+    .hidden { display: none !important; }
+    .legend { display: flex; gap: 14px; font-size: 0.82rem; margin-bottom: 10px; }
+    .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>管院空間與排課系統 — 志願排課模組</h1>
+    <div class="user-bar">
+      <span id="user-info">載入中...</span>
+      <span class="badge" id="user-role-badge">role</span>
+      <!-- 測試用快速切換角色按鈕，方便 Demo 展示 -->
+      <button class="btn-outline" onclick="switchDemoRole()">切換測試身分 (教師/管理員)</button>
+      <button class="btn-outline" onclick="logout()">登出</button>
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <!-- 左側欄：登記志願 / 新增排課表單 -->
+    <div>
+      <div class="card" id="form-card">
+        <h2 id="form-title">登記排課志願</h2>
+        <form id="course-form">
+          <div class="form-group">
+            <label>課程代碼</label>
+            <input type="text" id="course-code" required placeholder="例如：IM301" />
+          </div>
+          <div class="form-group">
+            <label>課程名稱</label>
+            <input type="text" id="course-name" required placeholder="例如：軟體工程" />
+          </div>
+          <div class="form-group" id="teacher-id-group">
+            <label>授課教師編號 (teacher_id)</label>
+            <input type="number" id="teacher-id" required placeholder="輸入教師的 user_id" />
+          </div>
+          <div class="form-group">
+            <label>希望教室編號 (classroom_id，可留空待定)</label>
+            <input type="number" id="classroom-id" placeholder="例如：1 (對應管院教室ID)" />
+          </div>
+          <div class="form-group">
+            <label>上課日期</label>
+            <input type="date" id="course-date" required />
+          </div>
+          <div class="row-2">
+            <div class="form-group">
+              <label>開始時間</label>
+              <input type="time" id="start-time" required value="09:00" />
+            </div>
+            <div class="form-group">
+              <label>結束時間</label>
+              <input type="time" id="end-time" required value="12:00" />
+            </div>
+          </div>
+          <button type="submit" class="btn-submit" id="submit-course-btn">送出排課志願</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 右側欄：衝堂偵測 + FullCalendar 週日曆 + 課程列表 -->
+    <div>
+      <!-- 管理員專用衝堂警告區 -->
+      <div id="conflict-panel" class="conflict-box clean hidden">
+        <div class="conflict-title" id="conflict-summary">正在檢查排課衝突...</div>
+        <ul class="conflict-list" id="conflict-list"></ul>
+      </div>
+
+      <!-- FullCalendar 週日曆 -->
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h2 style="border:none; margin:0; padding:0;">排課總覽日曆 <small id="drag-hint" style="font-weight:400; color:#666;"></small></h2>
+          <div class="legend">
+            <span><i class="dot" style="background:#4f772d;"></i>已核定 (confirmed)</span>
+            <span><i class="dot" style="background:#d4a373;"></i>志願待審 (pending)</span>
+          </div>
+        </div>
+        <div id="calendar"></div>
+      </div>
+
+      <!-- 課程明細列表 -->
+      <div class="card">
+        <h2>課程清單與管理</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>代碼</th>
+              <th>課程名稱</th>
+              <th>授課教師</th>
+              <th>教室</th>
+              <th>日期與時段</th>
+              <th>狀態</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="course-table-body">
+            <tr><td colspan="7" style="text-align:center;">載入資料中...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script src="schedule.js"></script>
+</body>
+</html>
